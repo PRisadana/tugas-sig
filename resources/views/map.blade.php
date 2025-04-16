@@ -65,12 +65,6 @@
                                             data-id="{{ $loc->id }}">
                                             {{ $loc->name }}
                                         </button>
-                                
-                                        <select class="geom-type bg-gray-700 text-white text-sm rounded px-2 py-1 mt-1" data-id="{{ $loc->id }}">
-                                            <option value="point">Point</option>
-                                            <option value="line">Line</option>
-                                            <option value="polygon">Polygon</option>
-                                        </select>
                                     </div>
                                 </td>
                                 <td>{{ $loc->latitude }}</td>
@@ -91,6 +85,12 @@
             <!-- Peta -->
             <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold mb-4 text-white">Peta Lokasi</h3>
+                <!-- Kontrol Geometri dan Reset Marker -->
+                <div class="flex gap-3 mb-4">
+                    <button id="btn-point" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Point</button>
+                    <button id="btn-line" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Line</button>
+                    <button id="btn-polygon" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Polygon</button>
+                </div>
                 <div id="map" class="w-full h-[500px] rounded"></div>
             </div>
         </div>
@@ -101,64 +101,140 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        var map = L.map('map').setView([-8.56132963, 115.33465187], 11);
-        
+        const map = L.map('map').setView([-8.56132963, 115.33465187], 11);
+    
         // Menggunakan OpenStreetMap sebagai background map
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
     
-        let activeLayer = null;
+        let activeLayer = null; // Layer aktif yang sedang ditampilkan
+        let selectedGeom = 'point'; // Default geometri adalah Point
+        let selectedLocation = null; // Lokasi yang dipilih (lat, lng, name)
+        let allMarkers = []; // Array untuk menyimpan semua marker
+        let allLineMarkers = []; // Array untuk menyimpan garis yang digambar
+        let allPolygonMarkers = []; // Array untuk menyimpan polygon yang digambar
     
-        document.querySelectorAll('.location-link').forEach(function(button) {
+        // Data lokasi dari Laravel
+        const locations = @json($locations);
+    
+        // Menampilkan semua marker saat awal
+        locations.forEach(loc => {
+            const marker = L.marker([loc.latitude, loc.longitude])
+                .addTo(map)
+                .bindPopup(`<strong>${loc.name}</strong>`);
+            allMarkers.push(marker);
+        });
+    
+        // Event listener untuk memilih geometri
+        document.getElementById('btn-point').addEventListener('click', () => {
+            selectedGeom = 'point';
+            updateButtonStyles(); // Update warna tombol
+            if (selectedLocation) renderGeometry(); // Jika lokasi sudah dipilih, tampilkan geometri
+        });
+        document.getElementById('btn-line').addEventListener('click', () => {
+            selectedGeom = 'line';
+            updateButtonStyles(); // Update warna tombol
+            if (selectedLocation) renderGeometry(); // Jika lokasi sudah dipilih, tampilkan geometri
+        });
+        document.getElementById('btn-polygon').addEventListener('click', () => {
+            selectedGeom = 'polygon';
+            updateButtonStyles(); // Update warna tombol
+            if (selectedLocation) renderGeometry(); // Jika lokasi sudah dipilih, tampilkan geometri
+        });
+    
+    
+        // Handler klik nama lokasi
+        document.querySelectorAll('.location-link').forEach(button => {
             button.addEventListener('click', function () {
-                // Ambil data lokasi dan tipe
                 const lat = parseFloat(this.getAttribute('data-lat'));
                 const lng = parseFloat(this.getAttribute('data-lng'));
                 const name = this.getAttribute('data-name');
-                const id = this.getAttribute('data-id');
     
-                // Ambil tipe geometri dari dropdown
-                const typeSelector = document.querySelector(`.geom-type[data-id="${id}"]`);
-                const type = typeSelector.value;
+                // Menyimpan lokasi yang dipilih
+                selectedLocation = { lat, lng, name };
     
-                // Bersihkan layer sebelumnya agar tidak menumpuk
+                // Bersihkan layer sebelumnya
                 if (activeLayer) {
                     map.removeLayer(activeLayer);
+                    activeLayer = null;
                 }
     
-                // Zoom ke lokasi
+                // Zoom ke lokasi yang dipilih
                 map.setView([lat, lng], 15);
     
-                // Tampilkan sesuai jenis geometri
-                if (type === 'point') {
-                    activeLayer = L.marker([lat, lng]).addTo(map).bindPopup("<b>" + name + "</b>").openPopup();
-                }
-    
-                if (type === 'line') {
-                    // Contoh: garis dari lokasi ke titik acak tetap
-                    const target = [-6.25, 106.85]; // titik tujuan statis
-                    activeLayer = L.polyline([[lat, lng], target], {
-                        color: 'red',
-                        weight: 4
-                    }).addTo(map).bindPopup("Line dari " + name).openPopup();
-                }
-    
-                if (type === 'polygon') {
-                    // Contoh: buat polygon segitiga sederhana dari lokasi
-                    const offset = 0.01;
-                    const coords = [
-                        [lat, lng],
-                        [lat + offset, lng + offset],
-                        [lat - offset, lng + offset]
-                    ];
-                    activeLayer = L.polygon(coords, {
-                        color: 'blue',
-                        fillColor: '#3b82f6',
-                        fillOpacity: 0.4
-                    }).addTo(map).bindPopup("Polygon dari " + name).openPopup();
-                }
+                // Tampilkan geometri sesuai tipe yang dipilih
+                renderGeometry();
             });
         });
-    </script>    
+    
+        // Fungsi untuk menggambar geometri sesuai dengan tipe yang dipilih
+        function renderGeometry() {
+            if (!selectedLocation) return;
+    
+            const { lat, lng, name } = selectedLocation;
+    
+            // Bersihkan geometri sebelumnya
+            if (selectedGeom === 'point' && activeLayer) {
+                map.removeLayer(activeLayer);
+            }
+    
+            // Tampilkan sesuai tipe geometri yang dipilih
+            if (selectedGeom === 'point') {
+                activeLayer = L.marker([lat, lng]).addTo(map)
+                    .bindPopup("<b>" + name + "</b>").openPopup();
+            }
+    
+            if (selectedGeom === 'line') {
+                // Menghapus line jika ada
+                if (allLineMarkers.length > 0) {
+                    allLineMarkers.forEach(line => map.removeLayer(line));
+                }
+    
+                const target = [-6.25, 106.85]; // contoh garis menuju titik tetap
+                activeLayer = L.polyline([[lat, lng], target], {
+                    color: 'orange',
+                    weight: 4
+                }).addTo(map).bindPopup("Line dari " + name).openPopup();
+                allLineMarkers.push(activeLayer);
+            }
+    
+            if (selectedGeom === 'polygon') {
+                // Menghapus polygon jika ada
+                if (allPolygonMarkers.length > 0) {
+                    allPolygonMarkers.forEach(polygon => map.removeLayer(polygon));
+                }
+    
+                const offset = 0.01;
+                const coords = [
+                    [lat, lng],
+                    [lat + offset, lng + offset],
+                    [lat - offset, lng + offset]
+                ];
+                activeLayer = L.polygon(coords, {
+                    color: 'blue',
+                    fillColor: '#3b82f6',
+                    fillOpacity: 0.4
+                }).addTo(map).bindPopup("Polygon dari " + name).openPopup();
+                allPolygonMarkers.push(activeLayer);
+            }
+        }
+    
+        // Fungsi untuk mengubah warna tombol geometri yang dipilih
+        function updateButtonStyles() {
+            // Reset semua tombol ke warna biru
+            document.getElementById('btn-point').classList.remove('bg-blue-700');
+            document.getElementById('btn-line').classList.remove('bg-blue-700');
+            document.getElementById('btn-polygon').classList.remove('bg-blue-700');
+    
+            // Set tombol yang dipilih ke biru gelap
+            if (selectedGeom === 'point') {
+                document.getElementById('btn-point').classList.add('bg-blue-700');
+            } else if (selectedGeom === 'line') {
+                document.getElementById('btn-line').classList.add('bg-blue-700');
+            } else if (selectedGeom === 'polygon') {
+                document.getElementById('btn-polygon').classList.add('bg-blue-700');
+            }
+        }
+    </script>        
 </x-app-layout>
