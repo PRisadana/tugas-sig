@@ -21,6 +21,21 @@
                     <x-nav-link :href="route('map')" :active="request()->routeIs('map')">
                         {{ __('Map') }}
                     </x-nav-link>
+
+                    {{-- Kelola Titik --}}
+                    <x-nav-link :href="route('points.index')" :active="request()->routeIs('points.*')">
+                        {{ __('Titik') }}
+                    </x-nav-link>
+
+                    {{-- Kelola Garis --}}
+                    <x-nav-link :href="route('lines.index')" :active="request()->routeIs('lines.*')">
+                        {{ __('Garis') }}
+                    </x-nav-link>
+
+                    {{-- Kelola Polygon --}}
+                    <x-nav-link :href="route('polygons.index')" :active="request()->routeIs('polygons.*')">
+                        {{ __('Polygon') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -75,6 +90,18 @@
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
+            </x-responsive-nav-link>
+            
+            <x-responsive-nav-link :href="route('points.index')" :active="request()->routeIs('points.*')">
+                {{ __('Titik') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('lines.index')" :active="request()->routeIs('lines.*')">
+                {{ __('Garis') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('polygons.index')" :active="request()->routeIs('polygons.*')">
+                {{ __('Polygon') }}
             </x-responsive-nav-link>
         </div>
 

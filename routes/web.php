@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\PointController;
+use App\Http\Controllers\LineController;
+use App\Http\Controllers\PolygonController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Location;
@@ -51,4 +54,10 @@ require __DIR__.'/auth.php';
 
 Route::middleware(['auth'])->group(function () {
     Route::resource('locations', LocationController::class);
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::resource('points', PointController::class);
+    Route::resource('lines', LineController::class);
+    Route::resource('polygons', PolygonController::class);
 });
