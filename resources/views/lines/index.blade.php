@@ -36,6 +36,16 @@
                                     <button type="submit" class="text-red-500 hover:underline">Hapus</button>
                                 </form>
                             </td>
+                            <td>
+                                <button 
+                                    type="button"
+                                    class="text-blue-500 hover:underline edit-line-btn"
+                                    data-id="{{ $line->id }}"
+                                    data-name="{{ $line->name }}"
+                                    data-geo='{{ $line->geometry }}'>
+                                    Edit
+                                </button>
+                            </td>
                         </tr>
                     @endforeach
                     @if(count($lines) === 0)
@@ -49,18 +59,24 @@
         <div class="bg-white rounded shadow p-4 mb-6">
             <form action="{{ route('lines.store') }}" method="POST" id="line-form">
                 @csrf
+                <input type="hidden" name="id" id="line-id">
+
                 <div class="mb-4">
                     <label class="block mb-1">Nama Garis</label>
-                    <input type="text" name="name" required class="w-full border rounded p-2" />
+                    <input type="text" name="name" id="line-name" required class="w-full border rounded p-2" />
                 </div>
 
                 <input type="hidden" name="geometry" id="geometry" />
 
                 <div class="mt-2">
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Simpan Garis</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" id="line-submit">
+                        Simpan Garis
+                    </button>
+                    <button type="button" id="cancel-edit" class="ml-2 text-gray-600 hover:underline hidden">Batal</button>
                 </div>
             </form>
         </div>
+
 
         <!-- Peta -->
         <h3 class="text-lg font-semibold mb-2">Peta Garis</h3>
@@ -122,5 +138,35 @@
                 map.fitBounds(layer.getBounds());
             });
         });
+
+        document.querySelectorAll('.edit-line-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = this.dataset.id;
+                const name = this.dataset.name;
+                const geo = JSON.parse(this.dataset.geo);
+
+                // isi form edit
+                document.getElementById('line-id').value = id;
+                document.getElementById('line-name').value = name;
+                document.getElementById('geometry').value = JSON.stringify(geo);
+                document.getElementById('line-submit').textContent = "Update Garis";
+                document.getElementById('cancel-edit').classList.remove('hidden');
+
+                // render ulang garis di peta
+                drawnItems.clearLayers();
+                const layer = L.geoJSON(geo);
+                layer.eachLayer(l => drawnItems.addLayer(l));
+            });
+        });
+
+        document.getElementById('cancel-edit').addEventListener('click', function () {
+            document.getElementById('line-id').value = "";
+            document.getElementById('line-name').value = "";
+            document.getElementById('geometry').value = "";
+            document.getElementById('line-submit').textContent = "Simpan Garis";
+            this.classList.add('hidden');
+            drawnItems.clearLayers();
+        });
+
     </script>
 </x-app-layout>

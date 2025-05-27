@@ -20,13 +20,21 @@ class LineController extends Controller
             'geometry' => 'required|string',
         ]);
 
-        Location::create([
-            'name' => $request->name,
-            'type' => 'line',
-            'geometry' => $request->geometry,
-        ]);
-
-        return redirect()->route('lines.index')->with('success', 'Garis berhasil ditambahkan.');
+        if ($request->filled('id')) {
+            $line = Location::findOrFail($request->id);
+            $line->update([
+                'name' => $request->name,
+                'geometry' => $request->geometry
+            ]);
+            return redirect()->route('lines.index')->with('success', 'Garis berhasil diperbarui.');
+        } else {
+            Location::create([
+                'name' => $request->name,
+                'type' => 'line',
+                'geometry' => $request->geometry
+            ]);
+            return redirect()->route('lines.index')->with('success', 'Garis berhasil ditambahkan.');
+        }
     }
 
     public function destroy($id)

@@ -36,6 +36,16 @@
                                     <button type="submit" class="text-red-500 hover:underline">Hapus</button>
                                 </form>
                             </td>
+                            <td>
+                                <button 
+                                    type="button"
+                                    class="text-blue-500 hover:underline edit-polygon-btn"
+                                    data-id="{{ $polygon->id }}"
+                                    data-name="{{ $polygon->name }}"
+                                    data-geo='{{ $polygon->geometry }}'>
+                                    Edit
+                                </button>
+                            </td>
                         </tr>
                     @endforeach
                     @if(count($polygons) === 0)
@@ -49,14 +59,22 @@
         <div class="bg-white rounded shadow p-4 mb-6">
             <form action="{{ route('polygons.store') }}" method="POST" id="polygon-form">
                 @csrf
+                <input type="hidden" name="id" id="polygon-id">
+
                 <div class="mb-4">
                     <label class="block mb-1">Nama Polygon</label>
-                    <input type="text" name="name" required class="w-full border rounded p-2" />
+                    <input type="text" name="name" id="polygon-name" required class="w-full border rounded p-2" />
                 </div>
+
                 <input type="hidden" name="geometry" id="geometry" />
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Simpan Polygon</button>
+
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" id="polygon-submit">
+                    Simpan Polygon
+                </button>
+                <button type="button" id="cancel-edit" class="ml-2 text-gray-600 hover:underline hidden">Batal</button>
             </form>
         </div>
+
 
         <!-- Peta -->
         <h3 class="text-lg font-semibold mb-2">Peta Polygon</h3>
@@ -109,6 +127,33 @@
                 const layer = L.geoJSON(geo);
                 map.fitBounds(layer.getBounds());
             });
+        });
+
+        document.querySelectorAll('.edit-polygon-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = this.dataset.id;
+                const name = this.dataset.name;
+                const geo = JSON.parse(this.dataset.geo);
+
+                document.getElementById('polygon-id').value = id;
+                document.getElementById('polygon-name').value = name;
+                document.getElementById('geometry').value = JSON.stringify(geo);
+                document.getElementById('polygon-submit').textContent = "Update Polygon";
+                document.getElementById('cancel-edit').classList.remove('hidden');
+
+                drawnItems.clearLayers();
+                const layer = L.geoJSON(geo);
+                layer.eachLayer(l => drawnItems.addLayer(l));
+            });
+        });
+
+        document.getElementById('cancel-edit').addEventListener('click', function () {
+            document.getElementById('polygon-id').value = "";
+            document.getElementById('polygon-name').value = "";
+            document.getElementById('geometry').value = "";
+            document.getElementById('polygon-submit').textContent = "Simpan Polygon";
+            this.classList.add('hidden');
+            drawnItems.clearLayers();
         });
     </script>
 </x-app-layout>

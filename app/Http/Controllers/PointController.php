@@ -26,14 +26,25 @@ class PointController extends Controller
             'longitude' => 'required|numeric'
         ]);
 
-        Location::create([
-            'name' => $request->name,
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'type' => 'point'
-        ]);
-
-        return redirect()->route('points.index')->with('success', 'Titik berhasil ditambahkan.');
+        if ($request->filled('id')) {
+            // Update mode
+            $point = Location::findOrFail($request->id);
+            $point->update([
+                'name' => $request->name,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+            ]);
+            return redirect()->route('points.index')->with('success', 'Titik berhasil diperbarui.');
+        } else {
+            // Create mode
+            Location::create([
+                'name' => $request->name,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'type' => 'point'
+            ]);
+            return redirect()->route('points.index')->with('success', 'Titik berhasil ditambahkan.');
+        }
     }
 
     public function edit($id)
