@@ -79,7 +79,7 @@
 
 
         <!-- Peta -->
-        <h3 class="text-lg font-semibold mb-2">Peta Garis</h3>
+        <h3 class="text-lg font-semibold mb-2 text-white">Peta Garis</h3>
         <div id="map" class="w-full h-[500px] rounded shadow"></div>
     </div>
 
